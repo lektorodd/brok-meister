@@ -77,16 +77,46 @@
         .footer {
             font-family: 'JetBrains Mono', monospace;
         }
+        /* Språkveljar */
+        .lang-switcher {
+            position: absolute;
+            top: 1.5rem;
+            left: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            background-color: rgba(31, 41, 55, 0.5);
+            padding: 0.5rem;
+            border-radius: 9999px;
+        }
+        .lang-btn {
+            cursor: pointer;
+            font-size: 1.5rem;
+            opacity: 0.5;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+        .lang-btn.active {
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="lang-switcher">
+        <span class="lang-btn active" data-lang="nn">🇳🇴</span>
+        <span class="lang-btn" data-lang="es">🇪🇸</span>
+        <span class="lang-btn" data-lang="fr">🇫🇷</span>
+    </div>
 
     <div id="game-container" class="w-full max-w-2xl mx-auto">
 
         <!-- Startskjerm -->
         <div id="start-screen" class="card text-center">
-            <h1 class="text-5xl font-bold text-cyan-400 mb-4">Brøk-meister</h1>
-            <p class="text-lg text-gray-300 mb-8">Test brøkeigenskapane dine i 10 oppgåver med aukande vanskegrad!</p>
+            <h1 id="main-title" class="text-5xl font-bold text-cyan-400 mb-4">Brøk-meister</h1>
+            <p id="start-desc" class="text-lg text-gray-300 mb-8">Test brøkeigenskapane dine i 10 oppgåver med aukande vanskegrad!</p>
             <button id="start-btn" class="btn bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-8 rounded-full text-xl shadow-lg">Start Spel</button>
         </div>
 
@@ -95,14 +125,14 @@
             <!-- Header med info -->
             <div class="flex justify-between items-center mb-4 text-gray-300">
                 <div>
-                    <span class="font-bold text-lg">Poeng:</span>
+                    <span id="score-label" class="font-bold text-lg">Poeng:</span>
                     <span id="score" class="font-bold text-xl text-cyan-400">0</span>
                 </div>
                 <div class="text-center">
                     <span id="question-counter" class="text-lg">Spørsmål 1 / 10</span>
                 </div>
                 <div>
-                    <span class="font-bold text-lg">Streak: 🔥</span>
+                    <span id="streak-label" class="font-bold text-lg">Streak: 🔥</span>
                     <span id="streak" class="font-bold text-xl text-amber-400">0</span>
                 </div>
             </div>
@@ -123,12 +153,12 @@
 
         <!-- Sluttskjerm -->
         <div id="end-screen" class="hidden card text-center">
-            <h2 class="text-4xl font-bold mb-2">Spelet er over!</h2>
+            <h2 id="end-title" class="text-4xl font-bold mb-2">Spelet er over!</h2>
             <p class="text-2xl font-semibold text-cyan-400 mb-4" id="final-title">Du er ein brøk-meister!</p>
             <div class="bg-gray-800 p-6 rounded-xl mb-8 shadow-inner">
-                <p class="text-xl mb-2">Poengsummen din:</p>
+                <p id="final-score-label" class="text-xl mb-2">Poengsummen din:</p>
                 <p id="final-score" class="text-6xl font-bold text-amber-400 mb-4">0</p>
-                <p class="text-lg">Høgaste streak: <span id="final-streak" class="font-bold">0</span>🔥</p>
+                <p id="final-streak-label" class="text-lg">Høgaste streak: <span id="final-streak" class="font-bold">0</span>🔥</p>
             </div>
             <button id="restart-btn" class="btn bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-8 rounded-full text-xl shadow-lg">Spel Igjen</button>
         </div>
@@ -140,63 +170,176 @@
     </footer>
 
     <script>
-        // --- STOR SPØRSMÅLSBANK PÅ NYNORSK ---
-        const allQuestions = [
-            // Kategori: Enkel
-            { question: "I ein brøk, kva heiter talet OVER brøkstreken?", options: ["Nemnar", "Teljar", "Sum", "Strek"], answer: 1, difficulty: 'enkel' },
-            { question: "Kva for ein brøk er lik brøk(1,2)?", options: ["brøk(2,3)", "brøk(3,4)", "brøk(4,8)", "brøk(1,3)"], answer: 2, difficulty: 'enkel' },
-            { question: "Kva er brøk(1,3) + brøk(1,3)?", options: ["brøk(2,6)", "brøk(1,9)", "brøk(2,3)", "brøk(1,3)"], answer: 2, difficulty: 'enkel' },
-            { question: "Kva er brøk(3,5) - brøk(1,5)?", options: ["brøk(2,5)", "2/0", "brøk(4,5)", "brøk(1,5)"], answer: 0, difficulty: 'enkel' },
-            { question: "Kva for ein brøk er størst: brøk(1,4) eller brøk(3,4)?", options: ["brøk(1,4)", "brøk(3,4)", "Dei er like store", "Umogleg å seie"], answer: 1, difficulty: 'enkel' },
-            { question: "Kva er brøk(1,2) av 10?", options: ["2", "10", "5", "20"], answer: 2, difficulty: 'enkel' },
-            { question: "Kva er brøken brøk(10,15) forenkla?", options: ["brøk(1,2)", "brøk(2,3)", "brøk(5,3)", "brøk(1,5)"], answer: 1, difficulty: 'enkel' },
-            { question: "Gjer om 2 og brøk(1,3) til uekte brøk.", options: ["brøk(7,3)", "brøk(2,3)", "brøk(3,2)", "brøk(6,3)"], answer: 0, difficulty: 'enkel' },
-            { question: "Rekn ut: brøk(1,2) + brøk(1,4)", options: ["brøk(2,6)", "brøk(1,8)", "brøk(3,4)", "brøk(1,4)"], answer: 2, difficulty: 'enkel' },
-            { question: "Kva er 2 * brøk(1,5)?", options: ["brøk(2,10)", "brøk(1,10)", "brøk(3,5)", "brøk(2,5)"], answer: 3, difficulty: 'enkel' },
-            { question: "Kva er nemnaren i brøken brøk(5,8)?", options: ["5", "8", "13", "3"], answer: 1, difficulty: 'enkel' },
-            { question: "Kva er 1 - brøk(1,4)?", options: ["brøk(3,4)", "brøk(0,4)", "1", "brøk(4,3)"], answer: 0, difficulty: 'enkel' },
-            { question: "Forenkla brøken brøk(6,9).", options: ["brøk(1,3)", "brøk(3,2)", "brøk(2,3)", "brøk(6,9)"], answer: 2, difficulty: 'enkel' },
-            { question: "Kva er brøk(4,7) + brøk(2,7)?", options: ["brøk(6,14)", "brøk(6,7)", "brøk(2,7)", "brøk(8,49)"], answer: 1, difficulty: 'enkel' },
-            { question: "Gjer om brøken brøk(5,2) til blanda tal.", options: ["2 og brøk(1,2)", "1 og brøk(3,2)", "5 og brøk(1,2)", "3 og brøk(1,2)"], answer: 0, difficulty: 'enkel' },
-            { question: "Kva for ein brøk er minst: brøk(1,5) eller brøk(1,8)?", options: ["brøk(1,5)", "Dei er like", "brøk(1,8)", "Umogleg å seie"], answer: 2, difficulty: 'enkel' },
+        // --- DATA FOR OMSETJINGAR ---
+        const translations = {
+            'nn': {
+                // UI
+                docTitle: "Brøk-meister",
+                mainTitle: "Brøk-meister",
+                startDesc: "Test brøkeigenskapane dine i 10 oppgåver med aukande vanskegrad!",
+                startBtn: "Start Spel",
+                scoreLabel: "Poeng:",
+                streakLabel: "Streak: 🔥",
+                questionLabel: "Spørsmål",
+                endTitle: "Spelet er over!",
+                finalScoreLabel: "Poengsummen din:",
+                finalStreakLabel: "Høgaste streak:",
+                restartBtn: "Spel Igjen",
+                // Titlar
+                titleMaster: "Gratulerer, du er ein brøk-meister!",
+                titleExpert: "Imponerande! Du er ein brøk-ekspert!",
+                titleApprentice: "Godt forsøk! Du er ein brøk-lærling.",
+                // Spørsmål
+                questions: [
+                    // Kategori: Enkel
+                    { question: "I ein brøk, kva heiter talet OVER brøkstreken?", options: ["Nemnar", "Teljar", "Sum", "Strek"], answer: 1, difficulty: 'enkel' },
+                    { question: "Kva for ein brøk er lik brøk(1,2)?", options: ["brøk(2,3)", "brøk(3,4)", "brøk(4,8)", "brøk(1,3)"], answer: 2, difficulty: 'enkel' },
+                    { question: "Kva er brøk(1,3) + brøk(1,3)?", options: ["brøk(2,6)", "brøk(1,9)", "brøk(2,3)", "brøk(1,3)"], answer: 2, difficulty: 'enkel' },
+                    { question: "Kva er brøk(3,5) - brøk(1,5)?", options: ["brøk(2,5)", "2/0", "brøk(4,5)", "brøk(1,5)"], answer: 0, difficulty: 'enkel' },
+                    { question: "Kva for ein brøk er størst: brøk(1,4) eller brøk(3,4)?", options: ["brøk(1,4)", "brøk(3,4)", "Dei er like store", "Umogleg å seie"], answer: 1, difficulty: 'enkel' },
+                    { question: "Kva er brøk(1,2) av 10?", options: ["2", "10", "5", "20"], answer: 2, difficulty: 'enkel' },
+                    { question: "Kva er brøken brøk(10,15) forenkla?", options: ["brøk(1,2)", "brøk(2,3)", "brøk(5,3)", "brøk(1,5)"], answer: 1, difficulty: 'enkel' },
+                    { question: "Gjer om 2 og brøk(1,3) til uekte brøk.", options: ["brøk(7,3)", "brøk(2,3)", "brøk(3,2)", "brøk(6,3)"], answer: 0, difficulty: 'enkel' },
+                    { question: "Rekn ut: brøk(1,2) + brøk(1,4)", options: ["brøk(2,6)", "brøk(1,8)", "brøk(3,4)", "brøk(1,4)"], answer: 2, difficulty: 'enkel' },
+                    { question: "Kva er 2 * brøk(1,5)?", options: ["brøk(2,10)", "brøk(1,10)", "brøk(3,5)", "brøk(2,5)"], answer: 3, difficulty: 'enkel' },
+                    { question: "Kva er nemnaren i brøken brøk(5,8)?", options: ["5", "8", "13", "3"], answer: 1, difficulty: 'enkel' },
+                    { question: "Kva er 1 - brøk(1,4)?", options: ["brøk(3,4)", "brøk(0,4)", "1", "brøk(4,3)"], answer: 0, difficulty: 'enkel' },
+                    { question: "Forenkla brøken brøk(6,9).", options: ["brøk(1,3)", "brøk(3,2)", "brøk(2,3)", "brøk(6,9)"], answer: 2, difficulty: 'enkel' },
+                    { question: "Kva er brøk(4,7) + brøk(2,7)?", options: ["brøk(6,14)", "brøk(6,7)", "brøk(2,7)", "brøk(8,49)"], answer: 1, difficulty: 'enkel' },
+                    { question: "Gjer om brøken brøk(5,2) til blanda tal.", options: ["2 og brøk(1,2)", "1 og brøk(3,2)", "5 og brøk(1,2)", "3 og brøk(1,2)"], answer: 0, difficulty: 'enkel' },
+                    { question: "Kva for ein brøk er minst: brøk(1,5) eller brøk(1,8)?", options: ["brøk(1,5)", "Dei er like", "brøk(1,8)", "Umogleg å seie"], answer: 2, difficulty: 'enkel' },
 
-            // Kategori: Middels
-            { question: "Kva er brøken brøk(84,108) forenkla?", options: ["brøk(21,27)", "brøk(7,9)", "brøk(42,54)", "brøk(7,12)"], answer: 1, difficulty: 'middels' },
-            { question: "Kva for eit symbol (<, >, =) skal stå mellom brøk(5,6) og brøk(7,9)?", options: [">", "<", "=", "Umogleg å seie"], answer: 0, difficulty: 'middels' },
-            { question: "Rekn ut: brøk(3,4) - brøk(2,5) + brøk(1,2)", options: ["brøk(17,20)", "brøk(2,1)", "brøk(7,20)", "brøk(13,20)"], answer: 0, difficulty: 'middels' },
-            { question: "Rekn ut: 5 * brøk(3,8)", options: ["brøk(15,40)", "brøk(3,40)", "brøk(15,8)", "brøk(8,15)"], answer: 2, difficulty: 'middels' },
-            { question: "Kva blir resultatet av brøk(5,9) : brøk(2,3)?", options: ["brøk(10,27)", "brøk(5,6)", "brøk(6,5)", "brøk(27,10)"], answer: 1, difficulty: 'middels' },
-            { question: "Gjer om 4 og brøk(2,7) til uekte brøk.", options: ["brøk(8,7)", "brøk(28,7)", "brøk(30,7)", "brøk(42,7)"], answer: 2, difficulty: 'middels' },
-            { question: "Ein klasse har 28 elevar. brøk(3,7) er gutar. Kor mange jenter er det?", options: ["12", "16", "7", "21"], answer: 1, difficulty: 'middels' },
-            { question: "Kva er brøk(3,4) av 200?", options: ["100", "50", "150", "250"], answer: 2, difficulty: 'middels' },
-            { question: "Gjer om den uekte brøken brøk(17,5) til blanda tal.", options: ["2 og brøk(3,5)", "3 og brøk(2,5)", "4 og brøk(1,5)", "5 og brøk(2,5)"], answer: 1, difficulty: 'middels' },
-            { question: "Rekn ut: brøk(2,3) + brøk(1,6)", options: ["brøk(3,9)", "brøk(5,6)", "brøk(3,6)", "brøk(2,18)"], answer: 1, difficulty: 'middels' },
-            { question: "Kva er brøk(3,4) * brøk(2,5)?", options: ["brøk(6,20)", "brøk(5,9)", "brøk(3,10)", "brøk(6,9)"], answer: 2, difficulty: 'middels' },
-            { question: "Ein sjokolade har 12 ruter. Du et brøk(1,4). Kor mange ruter et du?", options: ["3", "4", "6", "1"], answer: 0, difficulty: 'middels' },
-            { question: "Rekn ut: brøk(5,8) - brøk(1,4)", options: ["brøk(4,4)", "brøk(3,8)", "brøk(4,8)", "brøk(1,2)"], answer: 1, difficulty: 'middels' },
-            { question: "Sorter frå minst til størst: brøk(1,2), brøk(3,8), brøk(2,5)", options: ["1/2, 3/8, 2/5", "3/8, 2/5, 1/2", "2/5, 1/2, 3/8", "3/8, 1/2, 2/5"], answer: 1, difficulty: 'middels' },
-            { question: "Gjer om 3 og brøk(3,4) til uekte brøk.", options: ["brøk(9,4)", "brøk(12,4)", "brøk(15,4)", "brøk(10,4)"], answer: 2, difficulty: 'middels' },
+                    // Kategori: Middels
+                    { question: "Kva er brøken brøk(84,108) forenkla?", options: ["brøk(21,27)", "brøk(7,9)", "brøk(42,54)", "brøk(7,12)"], answer: 1, difficulty: 'middels' },
+                    { question: "Kva for eit symbol (<, >, =) skal stå mellom brøk(5,6) og brøk(7,9)?", options: [">", "<", "=", "Umogleg å seie"], answer: 0, difficulty: 'middels' },
+                    { question: "Rekn ut: brøk(3,4) - brøk(2,5) + brøk(1,2)", options: ["brøk(17,20)", "brøk(2,1)", "brøk(7,20)", "brøk(13,20)"], answer: 0, difficulty: 'middels' },
+                    { question: "Rekn ut: 5 * brøk(3,8)", options: ["brøk(15,40)", "brøk(3,40)", "brøk(15,8)", "brøk(8,15)"], answer: 2, difficulty: 'middels' },
+                    { question: "Kva blir resultatet av brøk(5,9) : brøk(2,3)?", options: ["brøk(10,27)", "brøk(5,6)", "brøk(6,5)", "brøk(27,10)"], answer: 1, difficulty: 'middels' },
+                    { question: "Gjer om 4 og brøk(2,7) til uekte brøk.", options: ["brøk(8,7)", "brøk(28,7)", "brøk(30,7)", "brøk(42,7)"], answer: 2, difficulty: 'middels' },
+                    { question: "Ein klasse har 28 elevar. brøk(3,7) er gutar. Kor mange jenter er det?", options: ["12", "16", "7", "21"], answer: 1, difficulty: 'middels' },
+                    { question: "Kva er brøk(3,4) av 200?", options: ["100", "50", "150", "250"], answer: 2, difficulty: 'middels' },
+                    { question: "Gjer om den uekte brøken brøk(17,5) til blanda tal.", options: ["2 og brøk(3,5)", "3 og brøk(2,5)", "4 og brøk(1,5)", "5 og brøk(2,5)"], answer: 1, difficulty: 'middels' },
+                    { question: "Rekn ut: brøk(2,3) + brøk(1,6)", options: ["brøk(3,9)", "brøk(5,6)", "brøk(3,6)", "brøk(2,18)"], answer: 1, difficulty: 'middels' },
+                    { question: "Kva er brøk(3,4) * brøk(2,5)?", options: ["brøk(6,20)", "brøk(5,9)", "brøk(3,10)", "brøk(6,9)"], answer: 2, difficulty: 'middels' },
+                    { question: "Ein sjokolade har 12 ruter. Du et brøk(1,4). Kor mange ruter et du?", options: ["3", "4", "6", "1"], answer: 0, difficulty: 'middels' },
+                    { question: "Rekn ut: brøk(5,8) - brøk(1,4)", options: ["brøk(4,4)", "brøk(3,8)", "brøk(4,8)", "brøk(1,2)"], answer: 1, difficulty: 'middels' },
+                    { question: "Sorter frå minst til størst: brøk(1,2), brøk(3,8), brøk(2,5)", options: ["1/2, 3/8, 2/5", "3/8, 2/5, 1/2", "2/5, 1/2, 3/8", "3/8, 1/2, 2/5"], answer: 1, difficulty: 'middels' },
+                    { question: "Gjer om 3 og brøk(3,4) til uekte brøk.", options: ["brøk(9,4)", "brøk(12,4)", "brøk(15,4)", "brøk(10,4)"], answer: 2, difficulty: 'middels' },
 
-            // Kategori: Vanskelig
-            { question: "Rekn ut: (brøk(1,2) + brøk(1,3)) * brøk(6,5)", options: ["1", "brøk(11,10)", "brøk(7,5)", "brøk(6,10)"], answer: 0, difficulty: 'vanskelig' },
-            { question: "Ein bil har køyrt brøk(3,5) av 450 km. Kor mange km står att?", options: ["270 km", "90 km", "180 km", "300 km"], answer: 2, difficulty: 'vanskelig' },
-            { question: "Løys likninga for x: brøk(x,3) + 5 = brøk(1,2)", options: ["x = -brøk(27,2)", "x = -13.5", "x = brøk(33,2)", "x = -9"], answer: 1, difficulty: 'vanskelig' },
-            { question: "Kva er verdien av brøk(1 + brøk(1,4), 1 - brøk(1,4))?", options: ["brøk(5,3)", "1", "brøk(3,5)", "0"], answer: 0, difficulty: 'vanskelig' },
-            { question: "Rekn ut: ( brøk(2,3) : brøk(1,2) ) - brøk(1,3)", options: ["1", "brøk(5,6)", "brøk(7,6)", "brøk(4,3)"], answer: 0, difficulty: 'vanskelig' },
-            { question: "Kåre et brøk(1,4) av ein pizza, og Lise et brøk(1,3) av det som er att. Kor mykje er att til slutt?", options: ["brøk(1,2)", "brøk(1,4)", "brøk(7,12)", "brøk(5,12)"], answer: 0, difficulty: 'vanskelig' },
-            { question: "Løys for x: brøk(2x,5) - 1 = brøk(x,4)", options: ["x = 5", "x = brøk(4,3)", "x = brøk(20,3)", "x = 20"], answer: 3, difficulty: 'vanskelig' },
-            { question: "Ein tank blir fylt med brøk(3,8) liter per sekund. Kor lang tid tek det å fylle 12 liter?", options: ["32 sek", "4.5 sek", "24 sek", "36 sek"], answer: 0, difficulty: 'vanskelig' },
-            { question: "Kva er (brøk(1,2))³?", options: ["brøk(1,6)", "brøk(3,2)", "brøk(1,8)", "brøk(1,5)"], answer: 2, difficulty: 'vanskelig' },
-            { question: "Rekn ut: 5 : (brøk(1,2) + brøk(1,3))", options: ["6", "12", "brøk(5,6)", "30"], answer: 0, difficulty: 'vanskelig' },
-            { question: "Rekn ut: (brøk(3,4) - brøk(1,3)) : brøk(5,6)", options: ["brøk(1,2)", "brøk(5,24)", "brøk(25,72)", "1"], answer: 0, difficulty: 'vanskelig' },
-            { question: "Løys for x: brøk(x,2) - brøk(x,5) = 3", options: ["x = 6", "x = 10", "x = 15", "x = 5"], answer: 1, difficulty: 'vanskelig' },
-            { question: "Ei flaske inneheld brøk(3,4) liter saft. Kor mange glas som rommar brøk(1,8) liter kan du fylle?", options: ["4", "5", "6", "8"], answer: 2, difficulty: 'vanskelig' },
-            { question: "Rekn ut: 2 og brøk(1,2) * 1 og brøk(1,3)", options: ["2 og brøk(1,6)", "3 og brøk(1,3)", "3 og brøk(1,2)", "4"], answer: 2, difficulty: 'vanskelig' },
-            { question: "Ein tredjedel av elevane er gutar. Halvparten av gutane har briller. Kva del av klassen er gutar med briller?", options: ["brøk(1,5)", "brøk(1,6)", "brøk(2,5)", "brøk(2,3)"], answer: 1, difficulty: 'vanskelig' },
-            { question: "Kva er verdien av brøk(2, 3 - brøk(1,2))?", options: ["brøk(4,5)", "1", "brøk(2,5)", "brøk(3,5)"], answer: 0, difficulty: 'vanskelig' },
-        ];
+                    // Kategori: Vanskelig
+                    { question: "Rekn ut: (brøk(1,2) + brøk(1,3)) * brøk(6,5)", options: ["1", "brøk(11,10)", "brøk(7,5)", "brøk(6,10)"], answer: 0, difficulty: 'vanskelig' },
+                    { question: "Ein bil har køyrt brøk(3,5) av 450 km. Kor mange km står att?", options: ["270 km", "90 km", "180 km", "300 km"], answer: 2, difficulty: 'vanskelig' },
+                    { question: "Løys likninga for x: brøk(x,3) + 5 = brøk(1,2)", options: ["x = -brøk(27,2)", "x = -13.5", "x = brøk(33,2)", "x = -9"], answer: 1, difficulty: 'vanskelig' },
+                    { question: "Kva er verdien av brøk(1 + brøk(1,4), 1 - brøk(1,4))?", options: ["brøk(5,3)", "1", "brøk(3,5)", "0"], answer: 0, difficulty: 'vanskelig' },
+                    { question: "Rekn ut: ( brøk(2,3) : brøk(1,2) ) - brøk(1,3)", options: ["1", "brøk(5,6)", "brøk(7,6)", "brøk(4,3)"], answer: 0, difficulty: 'vanskelig' },
+                    { question: "Kåre et brøk(1,4) av ein pizza, og Lise et brøk(1,3) av det som er att. Kor mykje er att til slutt?", options: ["brøk(1,2)", "brøk(1,4)", "brøk(7,12)", "brøk(5,12)"], answer: 0, difficulty: 'vanskelig' },
+                    { question: "Løys for x: brøk(2x,5) - 1 = brøk(x,4)", options: ["x = 5", "x = brøk(4,3)", "x = brøk(20,3)", "x = 20"], answer: 3, difficulty: 'vanskelig' },
+                    { question: "Ein tank blir fylt med brøk(3,8) liter per sekund. Kor lang tid tek det å fylle 12 liter?", options: ["32 sek", "4.5 sek", "24 sek", "36 sek"], answer: 0, difficulty: 'vanskelig' },
+                    { question: "Kva er (brøk(1,2))³?", options: ["brøk(1,6)", "brøk(3,2)", "brøk(1,8)", "brøk(1,5)"], answer: 2, difficulty: 'vanskelig' },
+                    { question: "Rekn ut: 5 : (brøk(1,2) + brøk(1,3))", options: ["6", "12", "brøk(5,6)", "30"], answer: 0, difficulty: 'vanskelig' },
+                    { question: "Rekn ut: (brøk(3,4) - brøk(1,3)) : brøk(5,6)", options: ["brøk(1,2)", "brøk(5,24)", "brøk(25,72)", "1"], answer: 0, difficulty: 'vanskelig' },
+                    { question: "Løys for x: brøk(x,2) - brøk(x,5) = 3", options: ["x = 6", "x = 10", "x = 15", "x = 5"], answer: 1, difficulty: 'vanskelig' },
+                    { question: "Ei flaske inneheld brøk(3,4) liter saft. Kor mange glas som rommar brøk(1,8) liter kan du fylle?", options: ["4", "5", "6", "8"], answer: 2, difficulty: 'vanskelig' },
+                    { question: "Rekn ut: 2 og brøk(1,2) * 1 og brøk(1,3)", options: ["2 og brøk(1,6)", "3 og brøk(1,3)", "3 og brøk(1,2)", "4"], answer: 2, difficulty: 'vanskelig' },
+                    { question: "Ein tredjedel av elevane er gutar. Halvparten av gutane har briller. Kva del av klassen er gutar med briller?", options: ["brøk(1,5)", "brøk(1,6)", "brøk(2,5)", "brøk(2,3)"], answer: 1, difficulty: 'vanskelig' },
+                    { question: "Kva er verdien av brøk(2, 3 - brøk(1,2))?", options: ["brøk(4,5)", "1", "brøk(2,5)", "brøk(3,5)"], answer: 0, difficulty: 'vanskelig' },
+                ]
+            },
+            'es': {
+                // UI
+                docTitle: "Maestro de Fracciones",
+                mainTitle: "Maestro de Fracciones",
+                startDesc: "¡Prueba tus habilidades con fracciones en 10 problemas de dificultad creciente!",
+                startBtn: "Empezar Juego",
+                scoreLabel: "Puntos:",
+                streakLabel: "Racha: 🔥",
+                questionLabel: "Pregunta",
+                endTitle: "¡Juego Terminado!",
+                finalScoreLabel: "Tu puntuación:",
+                finalStreakLabel: "Racha más alta:",
+                restartBtn: "Jugar de Nuevo",
+                // Titlar
+                titleMaster: "¡Felicidades, eres un maestro de las fracciones!",
+                titleExpert: "¡Impresionante! ¡Eres un experto en fracciones!",
+                titleApprentice: "¡Buen intento! Eres un aprendiz de fracciones.",
+                // Spørsmål
+                questions: [
+                    // Kategori: Enkel
+                    { question: "En una fracción, ¿cómo se llama el número SOBRE la línea de fracción?", options: ["Denominador", "Numerador", "Suma", "Línea"], answer: 1, difficulty: 'enkel' },
+                    { question: "¿Qué fracción es igual a brøk(1,2)?", options: ["brøk(2,3)", "brøk(3,4)", "brøk(4,8)", "brøk(1,3)"], answer: 2, difficulty: 'enkel' },
+                    { question: "¿Cuánto es brøk(1,3) + brøk(1,3)?", options: ["brøk(2,6)", "brøk(1,9)", "brøk(2,3)", "brøk(1,3)"], answer: 2, difficulty: 'enkel' },
+                    { question: "¿Cuánto es brøk(3,5) - brøk(1,5)?", options: ["brøk(2,5)", "2/0", "brøk(4,5)", "brøk(1,5)"], answer: 0, difficulty: 'enkel' },
+                    { question: "¿Qué fracción es mayor: brøk(1,4) o brøk(3,4)?", options: ["brøk(1,4)", "brøk(3,4)", "Son iguales", "Imposible de decir"], answer: 1, difficulty: 'enkel' },
+                    { question: "¿Cuánto es brøk(1,2) de 10?", options: ["2", "10", "5", "20"], answer: 2, difficulty: 'enkel' },
+                    { question: "¿Cuál es la fracción brøk(10,15) simplificada?", options: ["brøk(1,2)", "brøk(2,3)", "brøk(5,3)", "brøk(1,5)"], answer: 1, difficulty: 'enkel' },
+                    { question: "Convierte 2 y brøk(1,3) a fracción impropia.", options: ["brøk(7,3)", "brøk(2,3)", "brøk(3,2)", "brøk(6,3)"], answer: 0, difficulty: 'enkel' },
+                    { question: "Calcula: brøk(1,2) + brøk(1,4)", options: ["brøk(2,6)", "brøk(1,8)", "brøk(3,4)", "brøk(1,4)"], answer: 2, difficulty: 'enkel' },
+                    { question: "¿Cuánto es 2 * brøk(1,5)?", options: ["brøk(2,10)", "brøk(1,10)", "brøk(3,5)", "brøk(2,5)"], answer: 3, difficulty: 'enkel' },
+                    
+                    // Kategori: Middels
+                    { question: "¿Cuál es la fracción brøk(84,108) simplificada?", options: ["brøk(21,27)", "brøk(7,9)", "brøk(42,54)", "brøk(7,12)"], answer: 1, difficulty: 'middels' },
+                    { question: "¿Qué símbolo (<, >, =) debe ir entre brøk(5,6) y brøk(7,9)?", options: [">", "<", "=", "Imposible de decir"], answer: 0, difficulty: 'middels' },
+                    { question: "Calcula: brøk(3,4) - brøk(2,5) + brøk(1,2)", options: ["brøk(17,20)", "brøk(2,1)", "brøk(7,20)", "brøk(13,20)"], answer: 0, difficulty: 'middels' },
+                    { question: "¿Cuál es el resultado de brøk(5,9) : brøk(2,3)?", options: ["brøk(10,27)", "brøk(5,6)", "brøk(6,5)", "brøk(27,10)"], answer: 1, difficulty: 'middels' },
+                    { question: "Una clase tiene 28 estudiantes. brøk(3,7) son chicos. ¿Cuántas chicas hay?", options: ["12", "16", "7", "21"], answer: 1, difficulty: 'middels' },
+                    
+                    // Kategori: Vanskelig
+                    { question: "Calcula: (brøk(1,2) + brøk(1,3)) * brøk(6,5)", options: ["1", "brøk(11,10)", "brøk(7,5)", "brøk(6,10)"], answer: 0, difficulty: 'vanskelig' },
+                    { question: "Un coche ha recorrido brøk(3,5) de 450 km. ¿Cuántos km quedan?", options: ["270 km", "90 km", "180 km", "300 km"], answer: 2, difficulty: 'vanskelig' },
+                    { question: "Resuelve para x: brøk(x,3) + 5 = brøk(1,2)", options: ["x = -brøk(27,2)", "x = -13.5", "x = brøk(33,2)", "x = -9"], answer: 1, difficulty: 'vanskelig' },
+                    { question: "¿Cuál es el valor de brøk(1 + brøk(1,4), 1 - brøk(1,4))?", options: ["brøk(5,3)", "1", "brøk(3,5)", "0"], answer: 0, difficulty: 'vanskelig' },
+                    { question: "Calcula: ( brøk(2,3) : brøk(1,2) ) - brøk(1,3)", options: ["1", "brøk(5,6)", "brøk(7,6)", "brøk(4,3)"], answer: 0, difficulty: 'vanskelig' },
+                ]
+            },
+            'fr': {
+                // UI
+                docTitle: "Maître des Fractions",
+                mainTitle: "Maître des Fractions",
+                startDesc: "Testez vos compétences en fractions avec 10 problèmes de difficulté croissante !",
+                startBtn: "Commencer le Jeu",
+                scoreLabel: "Score:",
+                streakLabel: "Série: 🔥",
+                questionLabel: "Question",
+                endTitle: "Jeu Terminé !",
+                finalScoreLabel: "Votre score :",
+                finalStreakLabel: "Meilleure série :",
+                restartBtn: "Rejouer",
+                // Titlar
+                titleMaster: "Félicitations, vous êtes un maître des fractions !",
+                titleExpert: "Impressionnant ! Vous êtes un expert des fractions !",
+                titleApprentice: "Bel essai ! Vous êtes un apprenti des fractions.",
+                // Spørsmål
+                questions: [
+                    // Kategori: Enkel
+                    { question: "Dans une fraction, comment s'appelle le nombre AU-DESSUS de la barre de fraction ?", options: ["Dénominateur", "Numérateur", "Somme", "Barre"], answer: 1, difficulty: 'enkel' },
+                    { question: "Quelle fraction est égale à brøk(1,2) ?", options: ["brøk(2,3)", "brøk(3,4)", "brøk(4,8)", "brøk(1,3)"], answer: 2, difficulty: 'enkel' },
+                    { question: "Combien font brøk(1,3) + brøk(1,3) ?", options: ["brøk(2,6)", "brøk(1,9)", "brøk(2,3)", "brøk(1,3)"], answer: 2, difficulty: 'enkel' },
+                    { question: "Combien font brøk(3,5) - brøk(1,5) ?", options: ["brøk(2,5)", "2/0", "brøk(4,5)", "brøk(1,5)"], answer: 0, difficulty: 'enkel' },
+                    { question: "Quelle fraction est la plus grande : brøk(1,4) ou brøk(3,4) ?", options: ["brøk(1,4)", "brøk(3,4)", "Elles sont égales", "Impossible à dire"], answer: 1, difficulty: 'enkel' },
+                    { question: "Combien font brøk(1,2) de 10 ?", options: ["2", "10", "5", "20"], answer: 2, difficulty: 'enkel' },
+                    { question: "Quelle est la fraction brøk(10,15) simplifiée ?", options: ["brøk(1,2)", "brøk(2,3)", "brøk(5,3)", "brøk(1,5)"], answer: 1, difficulty: 'enkel' },
+                    { question: "Convertissez 2 et brøk(1,3) en fraction impropre.", options: ["brøk(7,3)", "brøk(2,3)", "brøk(3,2)", "brøk(6,3)"], answer: 0, difficulty: 'enkel' },
+                    
+                    // Kategori: Middels
+                    { question: "Quelle est la fraction brøk(84,108) simplifiée ?", options: ["brøk(21,27)", "brøk(7,9)", "brøk(42,54)", "brøk(7,12)"], answer: 1, difficulty: 'middels' },
+                    { question: "Quel symbole (<, >, =) doit aller entre brøk(5,6) et brøk(7,9) ?", options: [">", "<", "=", "Impossible à dire"], answer: 0, difficulty: 'middels' },
+                    { question: "Calculez : brøk(3,4) - brøk(2,5) + brøk(1,2)", options: ["brøk(17,20)", "brøk(2,1)", "brøk(7,20)", "brøk(13,20)"], answer: 0, difficulty: 'middels' },
+                    { question: "Quel est le résultat de brøk(5,9) : brøk(2,3) ?", options: ["brøk(10,27)", "brøk(5,6)", "brøk(6,5)", "brøk(27,10)"], answer: 1, difficulty: 'middels' },
+                    { question: "Une classe a 28 élèves. brøk(3,7) sont des garçons. Combien y a-t-il de filles ?", options: ["12", "16", "7", "21"], answer: 1, difficulty: 'middels' },
+
+                    // Kategori: Vanskelig
+                    { question: "Calculez : (brøk(1,2) + brøk(1,3)) * brøk(6,5)", options: ["1", "brøk(11,10)", "brøk(7,5)", "brøk(6,10)"], answer: 0, difficulty: 'vanskelig' },
+                    { question: "Une voiture a parcouru brøk(3,5) de 450 km. Combien de km restent-ils ?", options: ["270 km", "90 km", "180 km", "300 km"], answer: 2, difficulty: 'vanskelig' },
+                    { question: "Résolvez pour x : brøk(x,3) + 5 = brøk(1,2)", options: ["x = -brøk(27,2)", "x = -13.5", "x = brøk(33,2)", "x = -9"], answer: 1, difficulty: 'vanskelig' },
+                    { question: "Quelle est la valeur de brøk(1 + brøk(1,4), 1 - brøk(1,4)) ?", options: ["brøk(5,3)", "1", "brøk(3,5)", "0"], answer: 0, difficulty: 'vanskelig' },
+                    { question: "Calculez : ( brøk(2,3) : brøk(1,2) ) - brøk(1,3)", options: ["1", "brøk(5,6)", "brøk(7,6)", "brøk(4,3)"], answer: 0, difficulty: 'vanskelig' },
+                ]
+            }
+        };
 
         let gameQuestions = [];
+        let allQuestions = [];
+        let currentLanguage = 'nn';
 
         // --- HENT HTML-ELEMENT ---
         const startScreen = document.getElementById('start-screen');
@@ -213,11 +356,51 @@
         const finalScoreEl = document.getElementById('final-score');
         const finalStreakEl = document.getElementById('final-streak');
         const finalTitleEl = document.getElementById('final-title');
+        // UI-element for omsetjing
+        const docTitle = document.querySelector('title');
+        const mainTitle = document.getElementById('main-title');
+        const startDesc = document.getElementById('start-desc');
+        const scoreLabel = document.getElementById('score-label');
+        const streakLabel = document.getElementById('streak-label');
+        const endTitle = document.getElementById('end-title');
+        const finalScoreLabel = document.getElementById('final-score-label');
+        const finalStreakLabel = document.getElementById('final-streak-label');
+        const langButtons = document.querySelectorAll('.lang-btn');
 
         // --- SPELVARIABLAR ---
         let currentQuestionIndex, score, streak, highestStreak, questionStartTime;
 
         // --- FUNKSJONAR ---
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            const t = translations[lang];
+            
+            // Oppdater UI-tekst
+            docTitle.textContent = t.docTitle;
+            mainTitle.textContent = t.mainTitle;
+            startDesc.textContent = t.startDesc;
+            startBtn.textContent = t.startBtn;
+            scoreLabel.textContent = t.scoreLabel;
+            streakLabel.innerHTML = t.streakLabel;
+            endTitle.textContent = t.endTitle;
+            finalScoreLabel.textContent = t.finalScoreLabel;
+            finalStreakLabel.innerHTML = t.finalStreakLabel;
+            restartBtn.textContent = t.restartBtn;
+
+            // Oppdater aktivt flagg
+            langButtons.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === lang);
+            });
+
+            // Bytt ut heile spørsmålsbanken
+            allQuestions = t.questions;
+            
+            // Oppdater sluttskjerm-tittel viss den er synleg
+            if (!endScreen.classList.contains('hidden')) {
+                updateEndGameTitle();
+            }
+        }
+
         function formatMathExpressions(text) {
             return text.replace(/brøk\((\S+?),(\S+?)\)/g, (match, teller, nevner) => {
                 return `<span class="fraction"><sup>${teller}</sup><sub>${nevner}</sub></span>`;
@@ -263,7 +446,6 @@
             answerButtonsEl.innerHTML = '';
             const currentQuestion = gameQuestions[currentQuestionIndex];
 
-            // Sjekk lengda på spørsmålet og juster skriftstorleik
             if (currentQuestion.question.length > 60) {
                 questionTextEl.classList.add('question-text-long');
                 questionTextEl.classList.remove('md:text-3xl', 'text-2xl');
@@ -273,7 +455,7 @@
             }
 
             questionTextEl.innerHTML = formatMathExpressions(currentQuestion.question);
-            questionCounterEl.textContent = `Spørsmål ${currentQuestionIndex + 1} / ${gameQuestions.length}`;
+            questionCounterEl.textContent = `${translations[currentLanguage].questionLabel} ${currentQuestionIndex + 1} / ${gameQuestions.length}`;
             
             const progressPercent = ((currentQuestionIndex) / gameQuestions.length) * 100;
             progressBarEl.style.width = `${progressPercent}%`;
@@ -338,6 +520,20 @@
                 streakEl.classList.remove('pop-in');
             }, 300);
         }
+        
+        function updateEndGameTitle() {
+            const t = translations[currentLanguage];
+            if (score > 1200) {
+                finalTitleEl.textContent = t.titleMaster;
+                finalTitleEl.style.color = '#f59e0b';
+            } else if (score > 800) {
+                finalTitleEl.textContent = t.titleExpert;
+                finalTitleEl.style.color = '#67e8f9';
+            } else {
+                finalTitleEl.textContent = t.titleApprentice;
+                finalTitleEl.style.color = '#9ca3af';
+            }
+        }
 
         function endGame() {
             gameScreen.classList.add('hidden');
@@ -345,22 +541,20 @@
             progressBarEl.style.width = '100%';
             finalScoreEl.textContent = score;
             finalStreakEl.textContent = highestStreak;
-
-            if (score > 1200) {
-                finalTitleEl.textContent = "Gratulerer, du er ein brøk-meister!";
-                finalTitleEl.style.color = '#f59e0b';
-            } else if (score > 800) {
-                finalTitleEl.textContent = "Imponerande! Du er ein brøk-ekspert!";
-                finalTitleEl.style.color = '#67e8f9';
-            } else {
-                finalTitleEl.textContent = "Godt forsøk! Du er ein brøk-lærling.";
-                finalTitleEl.style.color = '#9ca3af';
-            }
+            updateEndGameTitle();
         }
 
         // --- EVENT LISTENERS ---
         startBtn.addEventListener('click', startGame);
         restartBtn.addEventListener('click', startGame);
+        langButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                changeLanguage(btn.dataset.lang);
+            });
+        });
+
+        // Initialiser med standardspråk
+        changeLanguage('nn');
 
     </script>
 </body>
